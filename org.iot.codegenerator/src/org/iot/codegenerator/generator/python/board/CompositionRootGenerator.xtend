@@ -15,7 +15,6 @@ import static extension org.iot.codegenerator.generator.python.GeneratorUtil.*
 import static extension org.iot.codegenerator.generator.python.ImportGenerator.*
 import com.google.inject.Inject
 import org.iot.codegenerator.codeGenerator.OnbSensor
-import java.util.Arrays
 
 class CompositionRootGenerator {
 	

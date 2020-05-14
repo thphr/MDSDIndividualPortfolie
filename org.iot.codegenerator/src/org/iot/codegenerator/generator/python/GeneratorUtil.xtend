@@ -1,6 +1,5 @@
 package org.iot.codegenerator.generator.python
 
-import org.iot.codegenerator.codeGenerator.ChannelOut
 import org.iot.codegenerator.codeGenerator.Filter
 import org.iot.codegenerator.codeGenerator.FrequencySampler
 import org.iot.codegenerator.codeGenerator.Map
