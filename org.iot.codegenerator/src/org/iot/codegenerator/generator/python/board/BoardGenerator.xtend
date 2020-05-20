@@ -18,9 +18,9 @@ class BoardGenerator {
 	
 	def compile(Board board, IFileSystemAccess2 fsa) {
 		BoardGenerator._fsa = fsa
-		fsa.generateFile('''board/composition_root.py''', compositionRootGenerator.compile(board))
-		fsa.generateFile('''board/sensor_provider.py''', sensorProviderGenerator.compile(board))
-		fsa.generateFile('''board/«board.name.asModule».py''', deviceGenerator.compile(board))
+//		fsa.generateFile('''board/composition_root.py''', compositionRootGenerator.compile(board))
+//		fsa.generateFile('''board/sensor_provider.py''', sensorProviderGenerator.compile(board))
+//		fsa.generateFile('''board/«board.name.asModule».py''', deviceGenerator.compile(board))
 
 		if (fsa.isFile("board/main.py")) {
 			val mainContents = fsa.readTextFile("board/main.py")
@@ -29,9 +29,9 @@ class BoardGenerator {
 			fsa.generateFile('''board/main.py''', compileMain(board))
 		}
 
-		board.sensors.forEach [
-			fsa.generateFile('''board/«sensortype».py''', sensorGenerator.compile(it))
-		]
+//		board.sensors.forEach [
+//			fsa.generateFile('''board/«sensortype».py''', sensorGenerator.compile(it))
+//		]
 
 		"/libfiles/communication.py".compileAsLibfile()
 		"/libfiles/pipeline.py".compileAsLibfile()
@@ -67,9 +67,9 @@ class BoardGenerator {
 				# def provide_«board.name.asModule»(self):
 				#     board = super().provide_«board.name.asModule»()
 				#     board.add_sensor(...)
-				«IF board.input !== null»
-					#     board.set_input_channel(...)
-				«ENDIF»
+«««				«IF board.input !== null»
+«««					#     board.set_input_channel(...)
+«««				«ENDIF»
 				#     board.add_output_channel(...)
 				pass
 			

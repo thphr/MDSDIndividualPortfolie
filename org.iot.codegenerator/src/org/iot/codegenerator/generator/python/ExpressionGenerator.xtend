@@ -99,11 +99,11 @@ class ExpressionGenerator {
 		'''«booleanLiteral.value.booleanValue.toString.toFirstUpper»'''
 	}
 
-	static def dispatch String compile(Reference reference) {
-		val sensor = reference.getContainerOfType(Sensor)
-		val variableName = sensor.variables.name
-		'''«variableName.asInstance».«reference.variable.name»'''
-	}
+//	static def dispatch String compile(Reference reference) {
+//		val sensor = reference.getContainerOfType(Sensor)
+//		val variableName = sensor.variables.name
+//		'''«variableName.asInstance».«reference.variable.name»'''
+//	}
 
 	static def dispatch String compile(StringLiteral stringLiteral) {
 		'''"«stringLiteral.value»"'''

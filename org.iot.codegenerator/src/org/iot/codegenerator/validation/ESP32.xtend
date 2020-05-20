@@ -21,6 +21,10 @@ class ESP32 extends GenericBoard {
 
 		switch version {
 			case "wrover": sensors = wrover
+			//TODO: added other versions for purpose of testing
+			case "pixi" : sensors = wrover
+			case "ranger": sensors = wrover
+			//:..
 			case "default": sensors = null
 		}
 	}

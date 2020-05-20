@@ -20,26 +20,53 @@ Channel:
 ;
 
 Board:
-	'board' name=ID 'version' version=ID BEGIN
+	AbstractBoard|BaseBoard
+;
+
+Sensor:
+	AbstractSensor|OverrideSensor|BaseSensor
+;
+
+AbstractBoard:
+	'abstract' 'board' name=ID BEGIN
+		sensors+=Sensor+
+	END
+;
+
+AbstractSensor returns Sensor:
+	//changed from name to type due to confusion between the Sensor_name and the Sensor_data_name.
+	{AbstractSensor} 'abstract' 'sensor' sensortype=ID
+;
+
+OverrideSensor returns Sensor:
+	{OverrideSensor} 'override' 'sensor' sensor=[Sensor] ('('pins+=INT (',' pins+=INT)* ')')? ('as' variables=Variables)? (BEGIN
+		sampler=Sampler datas+=SensorData+
+	END)?
+;
+
+BaseBoard:
+	'board' name=ID 'version' version=ID ('extends' supertypes+=[Board] (',' supertypes+=[Board])?)?BEGIN
 		('in' input=[Channel])? sensors+=Sensor+
 	END
 ;
 
-Sensor:
-	'sensor' (ExtSensor | OnbSensor) 'as' variables=Variables BEGIN
+BaseSensor:
+	'sensor' (ExtSensor|OnbSensor) 'as' variables=Variables BEGIN
 		sampler=Sampler datas+=SensorData+
 	END
 ;
 
 ExtSensor:
 	//changed from name to type due to confusion between the Sensor_name and the Sensor_data_name.
-	sensortype=ID '('pins+=INT (',' pins+=INT)* ')'
+	sensortype=ID '('pins+=INT (',' pins+=INT)* ')'   
 ;
+
 
 OnbSensor:
 	//changed from name to type due to confusion between the Sensor_name and the Sensor_data_name.
-	sensortype=ID
+	sensortype=ID 
 ;
+
 
 Variables:
 	name=ID '(' ids+=Variable (',' ids+=Variable)* ')'
@@ -199,8 +226,9 @@ TransformationOut:
 ;
 
 Provider:
-	Sensor | Transformation
+	OverrideSensor | BaseSensor | Transformation 
 ;
+
 
 terminal BEGIN: 'synthetic:BEGIN';
 terminal END: 'synthetic:END';

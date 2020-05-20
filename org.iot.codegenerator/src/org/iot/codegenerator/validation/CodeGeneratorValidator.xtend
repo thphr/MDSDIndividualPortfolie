@@ -16,8 +16,11 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
+import org.iot.codegenerator.codeGenerator.AbstractBoard
+import org.iot.codegenerator.codeGenerator.AbstractSensor
 import org.iot.codegenerator.codeGenerator.And
-import org.iot.codegenerator.codeGenerator.Board
+import org.iot.codegenerator.codeGenerator.BaseBoard
+import org.iot.codegenerator.codeGenerator.BaseSensor
 import org.iot.codegenerator.codeGenerator.ChannelOut
 import org.iot.codegenerator.codeGenerator.CodeGeneratorPackage
 import org.iot.codegenerator.codeGenerator.Conditional
@@ -39,6 +42,7 @@ import org.iot.codegenerator.codeGenerator.Negation
 import org.iot.codegenerator.codeGenerator.Not
 import org.iot.codegenerator.codeGenerator.OnbSensor
 import org.iot.codegenerator.codeGenerator.Or
+import org.iot.codegenerator.codeGenerator.OverrideSensor
 import org.iot.codegenerator.codeGenerator.Pipeline
 import org.iot.codegenerator.codeGenerator.Plus
 import org.iot.codegenerator.codeGenerator.Provider
@@ -70,6 +74,75 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 	@Inject
 	extension TypeChecker
 
+//This method needs scoping to define which abstract boards are in the scope for a particular board.
+//	@Check
+//	def checkIfSensorIsOverriden(AbstractSensor abstractsensor) {
+//	}
+	/**
+	 * Checks that the override sensors in the current board
+	 * are have the same name as the sensors from the super types
+	 * in which the current boards extends from, else
+	 * it should not be possible to override.
+	 */
+//	@Check
+//	def checkCorrectOverride(OverrideSensor overridesensor) {
+//		val abstractsensors = getListOfAbstractSensor(overridesensor)
+//		val basesensors = getListOfBaseSensor(overridesensor)
+//		
+//		for(abstractsensor : abstractsensors){
+//			for(basesensor : basesensors){
+//				if(overridesensor.sensor instanceof AbstractSensor){
+//					val absensor = overridesensor.sensor as AbstractSensor
+//					if(abstractsensor.sensortype != absensor.sensortype){
+//						error('''There is not such sensor to override''',CodeGeneratorPackage.eINSTANCE.baseSensor_Sensortype)
+//					}
+//				}
+//			
+//			}
+//		}
+//		
+//	}
+	def List<AbstractSensor> getListOfAbstractSensor(Sensor current) {
+		val baseboard = current.getContainerOfType(BaseBoard)
+		val supertypes = baseboard.supertypes
+		var abstractsensors = new ArrayList<AbstractSensor>
+		for (board : supertypes) {
+			if (board instanceof AbstractBoard) {
+				val sensors = board.sensors
+				if (sensors.length > 0) {
+					for (sensor : sensors) {
+						if (sensor instanceof AbstractSensor) {
+							abstractsensors.add(sensor)
+						}
+					}
+				}
+			}
+		}
+
+		return abstractsensors
+	}
+
+	def List<BaseSensor> getListOfBaseSensor(Sensor current) {
+		val baseboard = current.getContainerOfType(BaseBoard)
+		val supertypes = baseboard.supertypes
+		var basesensors = new ArrayList<BaseSensor>
+		for (board : supertypes) {
+			if (board instanceof BaseBoard) {
+				val sensors = board.sensors
+				if (sensors.length > 0) {
+					for (sensor : sensors) {
+						if (sensor instanceof BaseSensor) {
+							basesensors.add(sensor)
+						}
+					}
+
+				}
+			}
+
+		}
+		return basesensors
+	}
+
 	@Check(CheckType.NORMAL)
 	def checkDeviceConfiguration(DeviceConf configuration) {
 		val boards = configuration.board
@@ -77,11 +150,12 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 		if (boards.size() < 1) {
 			error('''There must be a board definition''', CodeGeneratorPackage.eINSTANCE.deviceConf_Board)
 			return
-		} else if (boards.size() > 1) {
-			error('''There must be exactly 1 board definition''', CodeGeneratorPackage.eINSTANCE.deviceConf_Board)
-			return
 		}
 
+//		else if (boards.size() > 1) {
+//			error('''There must be exactly 1 board definition''', CodeGeneratorPackage.eINSTANCE.deviceConf_Board)
+//			return
+//		}
 		val clouds = configuration.cloud
 
 		if (clouds.size() < 1) {
@@ -101,21 +175,23 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 	}
 
 	@Check
-	def validateBoard(Board board) {
+	def validateBoard(BaseBoard board) {
 		val b = UtilityBoard.getBoard(board)
 		if (b === null) {
 			error('''unsupported board type «board.name»''', CodeGeneratorPackage.eINSTANCE.board_Name)
 		} else if (b.sensors === null) {
-			error('''unsupported version «board.version» for board type «board.name»''', CodeGeneratorPackage.eINSTANCE.board_Version)
+			error('''unsupported version «board.version» for board type «board.name»''',
+				CodeGeneratorPackage.eINSTANCE.baseBoard_Version)
 		} else {
-			info('''«board.version» supports the following sensors: «b.sensors»''', CodeGeneratorPackage.eINSTANCE.board_Version)
+			info('''«board.version» supports the following sensors: «b.sensors»''',
+				CodeGeneratorPackage.eINSTANCE.baseBoard_Version)
 		}
 	}
-	 
+
 	@Check
 	def validateOnboardSensor(Sensor sensor) {
-		if (sensor instanceof OnbSensor){
-			val cb = sensor.getContainerOfType(Board)
+		if (sensor instanceof OnbSensor) {
+			val cb = sensor.getContainerOfType(BaseBoard)
 			val b = UtilityBoard.getBoard(cb)
 			val s = sensor as OnbSensor
 			val variableCount = b.getVariableCount(s.sensortype)
@@ -126,29 +202,34 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 			}
 
 			if (variableCount == -1) {
-				error('''«b» does not support sensor: «s.sensortype»''', CodeGeneratorPackage.eINSTANCE.sensor_Sensortype)
+				error('''«b» does not support sensor: «s.sensortype»''',
+					CodeGeneratorPackage.eINSTANCE.baseSensor_Sensortype)
 			} else if (variableCount < s.variables.ids.length) {
-				error('''Maximum number of output variables for sensor type «s.sensortype» is «variableCount»''', CodeGeneratorPackage.eINSTANCE.sensor_Sensortype)
+				error('''Maximum number of output variables for sensor type «s.sensortype» is «variableCount»''',
+					CodeGeneratorPackage.eINSTANCE.baseSensor_Sensortype)
 			} else if (variableCount > s.variables.ids.length) {
-				info('''«s.sensortype» supports up to «variableCount» variables''', CodeGeneratorPackage.eINSTANCE.sensor_Sensortype)
+				info('''«s.sensortype» supports up to «variableCount» variables''',
+					CodeGeneratorPackage.eINSTANCE.baseSensor_Sensortype)
 			}
 		}
 	}
-	
+
 	@Check
 	def validatePinsMatchesVars(Variables variables) {
 		val parent = variables.eContainer
 		switch parent {
 			ExtSensor:
 				if (parent.pins.size() < variables.ids.size()) {
-					error('''Expected «parent.pins.size()» pin inputs, got «variables.ids.size()»''', CodeGeneratorPackage.eINSTANCE.variables_Ids)
+					error('''Expected «parent.pins.size()» pin inputs, got «variables.ids.size()»''',
+						CodeGeneratorPackage.eINSTANCE.variables_Ids)
 				} else if (parent.pins.size() > variables.ids.size()) {
-					warning('''Number of pin inputs shuld match number of variables after "as"''', CodeGeneratorPackage.eINSTANCE.variables_Ids)					
+					warning('''Number of pin inputs shuld match number of variables after "as"''',
+						CodeGeneratorPackage.eINSTANCE.variables_Ids)
 				}
 		}
 	}
-	
-	@Check 
+
+	@Check
 	def validateLanguage(Language lang) {
 		var approved = Arrays.asList("python", "cplusplus")
 		if (!approved.contains(lang.name)) {
@@ -178,7 +259,7 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 			}
 		}
 	}
-	
+
 	@Check
 	def validateUsageOfdataDeclaration(SensorData data) {
 		val deviceConf = data.eContainer.getContainerOfType(DeviceConf)
@@ -189,7 +270,7 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 
 		if (!list.exists[it.provider == data]) {
 			warning('''Unused variable''', data, CodeGeneratorPackage.Literals.DATA__NAME, UNUSED_VARIABLE)
-			
+
 		}
 
 	}
@@ -204,9 +285,11 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 				val cloud = deviceConf.cloud
 				val fog = deviceConf.fog
 
-				if (board.size > 0) {
+				if (board.size > 0 && board instanceof BaseBoard) {
 					for (Sensor sensor : board.get(0).sensors) {
-						datas.addAll(sensor.datas)
+						if (sensor instanceof BaseSensor) {
+							datas.addAll(sensor.datas)
+						}
 					}
 				}
 
@@ -227,8 +310,7 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 			}
 		}
 	}
-	
-	
+
 	def checkNoDuplicateVariableNamesInStatement(List<Variable> variables) {
 		val variableNameValues = new HashMap<String, Set<Variable>>
 
@@ -249,71 +331,87 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 			}
 		}
 	}
-	
-	@Check
-	def validateVariable(Variables variables){	
-		val eContainer = variables.eContainer
-		if (eContainer instanceof Provider){
-			val provider = eContainer as Provider
-			checkNoDuplicateVariableNamesInStatement(provider.variables.ids)
-		}
-	}
-	
-	@Check
-	def validateDataOut(Variables variables){
-		variables.cacheVariables
-	} 
 
-	def checkSameTypeOfTransformationOutPipelines(List<TransformationOut> transformationOuts){
-		if (transformationOuts.size >1){
-			val firstPipelineType = transformationOuts.get(0).pipeline.lastType
-			for(TransformationOut transformationOut: transformationOuts){
-				val currentPipelineType = transformationOut.pipeline.lastType
-				if (firstPipelineType !== currentPipelineType){
-					error('''expected «firstPipelineType» got «currentPipelineType»''',
-						transformationOut, CodeGeneratorPackage.eINSTANCE.transformationOut_Pipeline
-					)
-				}
-			}
+	@Check
+	def validateVariable(Variables variables) {
+		val eContainer = variables.eContainer
+		if (eContainer instanceof Provider) {
+			val provider = eContainer as Provider
+			checkNoDuplicateVariableNamesInStatement(provider.variablesOnProvider.ids)
+
 		}
-	} 
-	
-	def checkSameTypeOfChannelOutPipelines(List<ChannelOut> channelOuts){
-		if (channelOuts.size >1){
-			val firstPipelineType = channelOuts.get(0).pipeline.lastType
-			for(ChannelOut channelOut: channelOuts){
-				val currentPipelineType = channelOut.pipeline.lastType
-				if (firstPipelineType !== currentPipelineType){
-					error('''expected «firstPipelineType» got «currentPipelineType»''',
-						channelOut, CodeGeneratorPackage.eINSTANCE.channelOut_Pipeline
+	}
+
+	def static Variables getVariablesOnProvider(Provider provider) {
+		switch (provider) {
+			OverrideSensor:
+				provider.variables
+			BaseSensor:
+				provider.variables
+			Transformation:
+				provider.variables
+		}
+	}
+
+	@Check
+	def validateDataOut(Variables variables) {
+		variables.cacheVariables
+	}
+
+	def checkSameTypeOfTransformationOutPipelines(List<TransformationOut> transformationOuts) {
+		if (transformationOuts.size > 1) {
+			val firstPipelineType = transformationOuts.get(0).pipeline.lastType
+			for (TransformationOut transformationOut : transformationOuts) {
+				val currentPipelineType = transformationOut.pipeline.lastType
+				if (firstPipelineType !== currentPipelineType) {
+					error(
+						'''expected «firstPipelineType» got «currentPipelineType»''',
+						transformationOut,
+						CodeGeneratorPackage.eINSTANCE.transformationOut_Pipeline
 					)
 				}
 			}
 		}
 	}
-	
+
+	def checkSameTypeOfChannelOutPipelines(List<ChannelOut> channelOuts) {
+		if (channelOuts.size > 1) {
+			val firstPipelineType = channelOuts.get(0).pipeline.lastType
+			for (ChannelOut channelOut : channelOuts) {
+				val currentPipelineType = channelOut.pipeline.lastType
+				if (firstPipelineType !== currentPipelineType) {
+					error(
+						'''expected «firstPipelineType» got «currentPipelineType»''',
+						channelOut,
+						CodeGeneratorPackage.eINSTANCE.channelOut_Pipeline
+					)
+				}
+			}
+		}
+	}
+
 	def checkWindowPipeline(Pipeline pipeline) {
 		if (pipeline instanceof WindowPipeline) {
 			error('''cannot use byWindow on tuple type''', pipeline, CodeGeneratorPackage.eINSTANCE.pipeline_Next)
 		}
 	}
-	
+
 	@Check
-	def validatePipelineOutputs(Data data){
+	def validatePipelineOutputs(Data data) {
 		if (data instanceof TransformationData) {
 			var transformationOuts = new ArrayList<TransformationOut>
 			val transformationDataOutputs = (data as TransformationData).outputs
-			
+
 			for (TransformationOut transformationOut : transformationDataOutputs) {
 				transformationOuts.add(transformationOut)
 				checkWindowPipeline(transformationOut.pipeline)
 			}
-			checkSameTypeOfTransformationOutPipelines(transformationOuts)	
+			checkSameTypeOfTransformationOutPipelines(transformationOuts)
 		} else if (data instanceof SensorData) {
 			var channelOuts = new ArrayList<ChannelOut>
 			val sensorDataOutputs = (data as SensorData).outputs
-			
-			for(SensorDataOut sensorDataOut : sensorDataOutputs) {
+
+			for (SensorDataOut sensorDataOut : sensorDataOutputs) {
 				if (sensorDataOut instanceof ChannelOut) {
 					val channelOut = sensorDataOut as ChannelOut
 					channelOuts.add(channelOut)
@@ -321,9 +419,9 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 				}
 			}
 			checkSameTypeOfChannelOutPipelines(channelOuts)
-		}	
+		}
 	}
-	
+
 	def validateTypes(TypeChecker.Type actual, TypeChecker.Type expected, EStructuralFeature error) {
 		if (expected != actual) {
 			error('''expected «expected» got «actual»''', error)

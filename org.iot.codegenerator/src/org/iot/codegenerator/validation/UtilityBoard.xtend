@@ -1,11 +1,11 @@
 package org.iot.codegenerator.validation
 
 import java.util.Set
-import org.iot.codegenerator.codeGenerator.Board
+import org.iot.codegenerator.codeGenerator.BaseBoard
 
 class UtilityBoard {
 
-	def static GenericBoard getBoard(Board b) {
+	def static GenericBoard getBoard(BaseBoard b) {
 		getBoard(b.name, b.version)
 	}
 
@@ -15,9 +15,14 @@ class UtilityBoard {
 
 		if (lowerCaseModel == "esp32") {
 			return new ESP32(lowerCaseVersion)
-		}
+		} 
+		
+		//TODO: Replaced with ESP32 to be able to define other board name.
+		// other names than "esp32"
+		return new ESP32(lowerCaseVersion)
+		
 
-		return null
+		//return null
 	}
 }
 

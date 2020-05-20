@@ -25,13 +25,13 @@ class GeneratorUtil {
 		name.toFirstUpper
 	}
 
-	static def boolean isFrequency(Sensor sensor) {
-		sensor.sampler instanceof FrequencySampler
-	}
-
-	static def boolean isSignal(Sensor sensor) {
-		sensor.sampler instanceof SignalSampler
-	}
+//	static def boolean isFrequency(Sensor sensor) {
+//		sensor.sampler instanceof FrequencySampler
+//	}
+//
+//	static def boolean isSignal(Sensor sensor) {
+//		sensor.sampler instanceof SignalSampler
+//	}
 
 	static def Iterable<SensorData> sensorDatas(Sensor sensor) {
 		return sensor.eAllOfType(SensorData)

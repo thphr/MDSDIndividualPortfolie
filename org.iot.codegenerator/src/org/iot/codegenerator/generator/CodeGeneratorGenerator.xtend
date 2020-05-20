@@ -24,16 +24,16 @@ class CodeGeneratorGenerator extends AbstractGenerator {
 	@Inject extension BoardGenerator
 
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
-		fsa.generateFile("config.json", resource.allContents.toIterable.filter(Channel).compile)
-		
-		val board = resource.allContents.filter(Board).next()
-		board.compile(fsa)
-		
-		val fog = resource.allContents.filter(Fog).next()
-		// TODO
-		
-		val cloud = resource.allContents.filter(Cloud).next()
-		// TODO
+//		fsa.generateFile("config.json", resource.allContents.toIterable.filter(Channel).compile)
+//		
+//		val board = resource.allContents.filter(Board).next()
+//		board.compile(fsa)
+//		
+//		val fog = resource.allContents.filter(Fog).next()
+//		// TODO
+//		
+//		val cloud = resource.allContents.filter(Cloud).next()
+//		// TODO
 	}
 
 	def String compile(Iterable<Channel> channels) {
