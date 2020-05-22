@@ -83,10 +83,11 @@ class CodeGeneratorScopeProvider extends AbstractCodeGeneratorScopeProvider {
 					list.add(sensor)
 				}
 			}
-		}
+		} 
 		Scopes.scopeFor(list,QualifiedName.wrapper[name],IScope.NULLSCOPE)
 	}
 	
+	//Switch on sensor names, since name can be either name or sensortype.
 	def static String getName(Sensor sensor){
 		switch(sensor){
 			OverrideSensor:
@@ -94,10 +95,15 @@ class CodeGeneratorScopeProvider extends AbstractCodeGeneratorScopeProvider {
 			AbstractSensor:
 				sensor.sensortype
 			BaseSensor:
-				sensor.name 
+				sensor.sensortype
 		}
 	}
-
+	
+	/**
+	 * gets all of the variables ids for a variable_ref scope 
+	 * and transformation scope from
+	 * Provider: overridesensor, basesensor, transformation
+	 */
 	def private IScope getVariableScope(EObject context) {
 		val mapContainer = context.getContainerOfType(Pipeline)?.eContainer()?.getContainerOfType(Map)
 		if (mapContainer !== null) {
@@ -120,6 +126,11 @@ class CodeGeneratorScopeProvider extends AbstractCodeGeneratorScopeProvider {
 		}
 	}
 
+	/**
+	 * gets all of the variables for a transformationout 
+	 * and channelout scope from
+	 * Provider: overridesensor, basesensor, transformation
+	 */
 	def private IScope getVariablesScope(EObject context) {
 		Scopes.scopeFor(Collections.singleton(context.getContainerOfType(Provider).variablesOnProvider))
 	}

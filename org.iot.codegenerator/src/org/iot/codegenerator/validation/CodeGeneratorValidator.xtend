@@ -17,10 +17,10 @@ import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.iot.codegenerator.codeGenerator.AbstractBoard
-import org.iot.codegenerator.codeGenerator.AbstractSensor
 import org.iot.codegenerator.codeGenerator.And
 import org.iot.codegenerator.codeGenerator.BaseBoard
 import org.iot.codegenerator.codeGenerator.BaseSensor
+import org.iot.codegenerator.codeGenerator.Board
 import org.iot.codegenerator.codeGenerator.ChannelOut
 import org.iot.codegenerator.codeGenerator.CodeGeneratorPackage
 import org.iot.codegenerator.codeGenerator.Conditional
@@ -42,7 +42,6 @@ import org.iot.codegenerator.codeGenerator.Negation
 import org.iot.codegenerator.codeGenerator.Not
 import org.iot.codegenerator.codeGenerator.OnbSensor
 import org.iot.codegenerator.codeGenerator.Or
-import org.iot.codegenerator.codeGenerator.OverrideSensor
 import org.iot.codegenerator.codeGenerator.Pipeline
 import org.iot.codegenerator.codeGenerator.Plus
 import org.iot.codegenerator.codeGenerator.Provider
@@ -59,6 +58,8 @@ import org.iot.codegenerator.codeGenerator.WindowPipeline
 import org.iot.codegenerator.typing.TypeChecker
 
 import static extension org.eclipse.xtext.EcoreUtil2.*
+import org.iot.codegenerator.codeGenerator.AbstractSensor
+import org.iot.codegenerator.codeGenerator.OverrideSensor
 
 /**
  * This class contains custom validation rules. 
@@ -74,73 +75,127 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 	@Inject
 	extension TypeChecker
 
-//This method needs scoping to define which abstract boards are in the scope for a particular board.
 //	@Check
-//	def checkIfSensorIsOverriden(AbstractSensor abstractsensor) {
-//	}
-	/**
-	 * Checks that the override sensors in the current board
-	 * are have the same name as the sensors from the super types
-	 * in which the current boards extends from, else
-	 * it should not be possible to override.
-	 */
-//	@Check
-//	def checkCorrectOverride(OverrideSensor overridesensor) {
-//		val abstractsensors = getListOfAbstractSensor(overridesensor)
-//		val basesensors = getListOfBaseSensor(overridesensor)
-//		
-//		for(abstractsensor : abstractsensors){
-//			for(basesensor : basesensors){
-//				if(overridesensor.sensor instanceof AbstractSensor){
-//					val absensor = overridesensor.sensor as AbstractSensor
-//					if(abstractsensor.sensortype != absensor.sensortype){
-//						error('''There is not such sensor to override''',CodeGeneratorPackage.eINSTANCE.baseSensor_Sensortype)
-//					}
-//				}
-//			
+//	def checkSameOverrideSensorName(OverrideSensor sensor) {
+//		val baseboard = sensor.getContainerOfType(BaseBoard)
+//		val overridesensors = baseboard.listOfOverrideSensor
+//		if (overridesensors.length > 0) {
+//			val list = overridesensors.filter[it !== context]
+//			if (list.exists[it.sensor.name === sensor.name]) {
+//				error('''The override sensor cannot override the same name''', sensor,
+//					CodeGeneratorPackage.eINSTANCE.overrideSensor_Sensor)
 //			}
 //		}
-//		
 //	}
-	def List<AbstractSensor> getListOfAbstractSensor(Sensor current) {
-		val baseboard = current.getContainerOfType(BaseBoard)
-		val supertypes = baseboard.supertypes
-		var abstractsensors = new ArrayList<AbstractSensor>
-		for (board : supertypes) {
-			if (board instanceof AbstractBoard) {
-				val sensors = board.sensors
-				if (sensors.length > 0) {
-					for (sensor : sensors) {
-						if (sensor instanceof AbstractSensor) {
-							abstractsensors.add(sensor)
-						}
+
+	/**
+	 * Check whether an abstract sensor is overriden
+	 * and the whole sensor is implemented.
+	 * Abstract sensor must be overriden.
+	 */
+	@Check
+	def checkIfAbstractSensorIsOverriden(AbstractBoard abstractboard) {
+		val deviceconf = abstractboard.getContainerOfType(DeviceConf)
+		val baseboards = deviceconf.listOfBaseboard
+		for (board : baseboards) {
+			val overridesensors = board.listOfOverrideSensor
+			val supertypes = board.supertypes
+			for (supertype : supertypes) {
+				if (supertype instanceof AbstractBoard) {
+					if (supertype.name == abstractboard.name) {
+						val abstractsensors = supertype.listOfAbstractSensor
+
+						// Check if overridesensor has the whole impl.
+						val allOverridenSensors = overridesensors.filter [ overridesensor |
+							abstractsensors.exists[abstractsensor|overridesensor.name === overridesensor.name]
+						]
+						allOverridenSensors.checkAbstractSensorImpl
+
+						// Check that all abstract sensors are overriden.		
+						val allNonOverridenSensors = abstractsensors.filter [ abstractsensor |
+							!overridesensors.exists[overrideSensor|abstractsensor.name === overrideSensor.name]
+						]
+						allNonOverridenSensors.forEach [
+							error('''The sensor «it.name» must be overriden''', board,
+								CodeGeneratorPackage.eINSTANCE.baseBoard_Supertypes)
+						]
 					}
 				}
 			}
+		}
+
+	}
+
+	// Check if overridesensor has the whole impl.
+	def checkAbstractSensorImpl(Iterable<OverrideSensor> sensors) {
+		val board = sensors.last.getContainerOfType(BaseBoard)
+		val b = UtilityBoard.getBoard(board)
+		for (overridesensor : sensors) {
+			if (overridesensor.sensor instanceof AbstractSensor) {
+				if (overridesensor.pins.size > 0) {
+					if (b.sensors.exists[it == overridesensor.sensor.name]) {
+						warning('''The sensor with the name «overridesensor.sensor.name» can also be an on-board sensor''',
+							overridesensor, CodeGeneratorPackage.eINSTANCE.overrideSensor_Sensor)
+					}
+				}
+
+				if (overridesensor.variables === null || overridesensor.sampler === null ||
+					overridesensor.datas === null) {
+					error('''The rest of the sensor body must be defined''', overridesensor,
+						CodeGeneratorPackage.eINSTANCE.overrideSensor_Sensor)
+				}
+
+			}
+
+		}
+	}
+
+	def List<BaseBoard> getListOfBaseboard(DeviceConf deviceconf) {
+		val baseboards = new ArrayList<BaseBoard>
+		val boards = deviceconf.board
+		for (board : boards) {
+			if (board instanceof BaseBoard) {
+				baseboards.add(board)
+			}
+		}
+
+		return baseboards
+	}
+
+	def List<OverrideSensor> getListOfOverrideSensor(BaseBoard board) {
+		val overridesensors = new ArrayList<OverrideSensor>
+		val sensors = board.sensors
+		for (sensor : sensors) {
+			if (sensor instanceof OverrideSensor) {
+				overridesensors.add(sensor)
+
+			}
+		}
+		return overridesensors
+	}
+
+	def static String getName(Sensor sensor) {
+		switch (sensor) {
+			OverrideSensor:
+				sensor.sensor.name
+			AbstractSensor:
+				sensor.sensortype
+			BaseSensor:
+				sensor.sensortype
+		}
+	}
+
+	def List<AbstractSensor> getListOfAbstractSensor(AbstractBoard board) {
+		var abstractsensors = new ArrayList<AbstractSensor>
+		val sensors = board.sensors
+		for (sensor : sensors) {
+			if (sensor instanceof AbstractSensor) {
+				abstractsensors.add(sensor)
+			}
+
 		}
 
 		return abstractsensors
-	}
-
-	def List<BaseSensor> getListOfBaseSensor(Sensor current) {
-		val baseboard = current.getContainerOfType(BaseBoard)
-		val supertypes = baseboard.supertypes
-		var basesensors = new ArrayList<BaseSensor>
-		for (board : supertypes) {
-			if (board instanceof BaseBoard) {
-				val sensors = board.sensors
-				if (sensors.length > 0) {
-					for (sensor : sensors) {
-						if (sensor instanceof BaseSensor) {
-							basesensors.add(sensor)
-						}
-					}
-
-				}
-			}
-
-		}
-		return basesensors
 	}
 
 	@Check(CheckType.NORMAL)
