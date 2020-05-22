@@ -138,8 +138,7 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 					error('''An onboard sensor cannot be overriden by an external sensor''', sensor,
 						CodeGeneratorPackage.eINSTANCE.overrideSensor_Sensor)
 				} 
-				//TODO: Is never reached
-				if (inheritedSensor instanceof ExtSensor && sensor.pins.size < 0) {
+				if (inheritedSensor instanceof ExtSensor && sensor.pins.size <= 0) {
 					error('''An external sensor cannot be overriden by an onboard sensor''', sensor,
 						CodeGeneratorPackage.eINSTANCE.overrideSensor_Sensor)
 				} 
