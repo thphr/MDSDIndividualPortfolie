@@ -75,7 +75,6 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 	@Inject
 	extension TypeChecker
 
-
 	/**
 	 * Check if both extended boards has the same sensor name, if true
 	 * throws an error on the extended board that it is illegal.
@@ -116,13 +115,36 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 
 			}
 		]
-		
-		
+
 	}
 
-	// If a sensor from the superclass is an onb 
-	// then the override sensor cannot be ext.
+	/**
+	 * Check if an onboard sensor is overriden with external sensor
+	 * and the opposite. If the case, throw an error.
+	 */
+	@Check
 	def checkOverrideMatchedOnbExtSensor(OverrideSensor sensor) {
+		val board = sensor.getContainerOfType(BaseBoard)
+		val supertypes = board.supertypes
+		val allInheritedSensors = new ArrayList<Sensor>
+
+		for (supertype : supertypes) {
+			allInheritedSensors.addAll(supertype.sensors)
+		}
+
+		for (inheritedSensor : allInheritedSensors) {
+			if (inheritedSensor.name == sensor.name) {
+				if (inheritedSensor instanceof OnbSensor && sensor.pins.size > 0) {
+					error('''An onboard sensor cannot be overriden by an external sensor''', sensor,
+						CodeGeneratorPackage.eINSTANCE.overrideSensor_Sensor)
+				} 
+				//TODO: Is never reached
+				if (inheritedSensor instanceof ExtSensor && sensor.pins.size < 0) {
+					error('''An external sensor cannot be overriden by an onboard sensor''', sensor,
+						CodeGeneratorPackage.eINSTANCE.overrideSensor_Sensor)
+				} 
+			}
+		}
 	}
 
 	/**
