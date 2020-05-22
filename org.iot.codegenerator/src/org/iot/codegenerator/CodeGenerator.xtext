@@ -39,9 +39,9 @@ AbstractSensor returns Sensor:
 ;
 
 OverrideSensor returns Sensor:
-	{OverrideSensor} 'override' 'sensor' sensor=[Sensor] ('('pins+=INT (',' pins+=INT)* ')')? ('as' variables=Variables)? (BEGIN
+	{OverrideSensor} 'override' 'sensor' sensor=[Sensor] ('('pins+=INT (',' pins+=INT)* ')')? 'as' variables=Variables BEGIN
 		sampler=Sampler datas+=SensorData+
-	END)?
+	END
 ;
 
 BaseBoard:
