@@ -60,6 +60,7 @@ import org.iot.codegenerator.typing.TypeChecker
 import static extension org.eclipse.xtext.EcoreUtil2.*
 import org.iot.codegenerator.codeGenerator.AbstractSensor
 import org.iot.codegenerator.codeGenerator.OverrideSensor
+import org.iot.codegenerator.util.CommonLibrary
 
 /**
  * This class contains custom validation rules. 
@@ -74,6 +75,8 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 
 	@Inject
 	extension TypeChecker
+	
+	@Inject extension CommonLibrary
 
 	/**
 	 * Check if both extended boards has the same sensor name, if true
@@ -117,6 +120,25 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 		]
 
 	}
+	
+	/**
+	 * Check for duplicated sensor name on base sensors.
+	 */
+	@Check
+	def checkDuplicateBaseSensorName(BaseBoard board) {
+		val baseSensors = board.sensors.filter[it instanceof BaseSensor]
+		val groupedSensors = baseSensors.groupBy[it.name]
+		groupedSensors.filter[sensorName, sensors|sensors.size > 1].forEach [ sensorName, sensors |
+			{
+				sensors.forEach [
+					error('''Duplicate of sensor «sensorName»''', it,
+						CodeGeneratorPackage.eINSTANCE.baseSensor_Sensortype)
+				]
+
+			}
+		]
+
+	}
 
 	/**
 	 * Check if an onboard sensor is overriden with external sensor
@@ -129,7 +151,7 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 		val allInheritedSensors = new ArrayList<Sensor>
 
 		for (supertype : supertypes) {
-			allInheritedSensors.addAll(supertype.sensors)
+			allInheritedSensors.addAll(supertype.sensors) 
 		}
 
 		for (inheritedSensor : allInheritedSensors) {
@@ -212,17 +234,6 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 			}
 		}
 		return overridesensors
-	}
-
-	def static String getName(Sensor sensor) {
-		switch (sensor) {
-			OverrideSensor:
-				sensor.sensor.name
-			AbstractSensor:
-				sensor.sensortype
-			BaseSensor:
-				sensor.sensortype
-		}
 	}
 
 	def List<AbstractSensor> getListOfAbstractSensor(AbstractBoard board) {

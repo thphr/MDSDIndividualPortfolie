@@ -1,6 +1,7 @@
 package org.iot.codegenerator.generator.python
 
 import org.iot.codegenerator.codeGenerator.And
+import org.iot.codegenerator.codeGenerator.BaseSensor
 import org.iot.codegenerator.codeGenerator.BooleanLiteral
 import org.iot.codegenerator.codeGenerator.Conditional
 import org.iot.codegenerator.codeGenerator.Div
@@ -18,7 +19,6 @@ import org.iot.codegenerator.codeGenerator.NumberLiteral
 import org.iot.codegenerator.codeGenerator.Or
 import org.iot.codegenerator.codeGenerator.Plus
 import org.iot.codegenerator.codeGenerator.Reference
-import org.iot.codegenerator.codeGenerator.Sensor
 import org.iot.codegenerator.codeGenerator.StringLiteral
 import org.iot.codegenerator.codeGenerator.Unequal
 
@@ -26,7 +26,7 @@ import static extension org.eclipse.xtext.EcoreUtil2.*
 import static extension org.iot.codegenerator.generator.python.GeneratorUtil.*
 
 class ExpressionGenerator {
-
+	
 	static def dispatch String compile(Conditional conditional) {
 		'''«conditional.correct.compile» if «conditional.condition.compile» else «conditional.incorrect.compile»'''
 	}
@@ -99,11 +99,11 @@ class ExpressionGenerator {
 		'''«booleanLiteral.value.booleanValue.toString.toFirstUpper»'''
 	}
 
-//	static def dispatch String compile(Reference reference) {
-//		val sensor = reference.getContainerOfType(Sensor)
-//		val variableName = sensor.variables.name
-//		'''«variableName.asInstance».«reference.variable.name»'''
-//	}
+	static def dispatch String compile(Reference reference) {
+		val sensor = reference.getContainerOfType(BaseSensor)
+		val variableName = sensor.variables.name
+		'''«variableName.asInstance».«reference.variable.name»'''
+	}
 
 	static def dispatch String compile(StringLiteral stringLiteral) {
 		'''"«stringLiteral.value»"'''

@@ -3,6 +3,7 @@
  */
 package org.iot.codegenerator.scoping
 
+import com.google.inject.Inject
 import java.util.ArrayList
 import java.util.Collections
 import org.eclipse.emf.ecore.EObject
@@ -10,9 +11,7 @@ import org.eclipse.emf.ecore.EReference
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
-import org.iot.codegenerator.codeGenerator.AbstractSensor
 import org.iot.codegenerator.codeGenerator.BaseBoard
-import org.iot.codegenerator.codeGenerator.BaseSensor
 import org.iot.codegenerator.codeGenerator.Board
 import org.iot.codegenerator.codeGenerator.Cloud
 import org.iot.codegenerator.codeGenerator.CodeGeneratorPackage
@@ -20,15 +19,13 @@ import org.iot.codegenerator.codeGenerator.Data
 import org.iot.codegenerator.codeGenerator.DeviceConf
 import org.iot.codegenerator.codeGenerator.Fog
 import org.iot.codegenerator.codeGenerator.Map
-import org.iot.codegenerator.codeGenerator.OverrideSensor
 import org.iot.codegenerator.codeGenerator.Pipeline
 import org.iot.codegenerator.codeGenerator.Provider
 import org.iot.codegenerator.codeGenerator.Sensor
-import org.iot.codegenerator.codeGenerator.Transformation
+import org.iot.codegenerator.util.CommonLibrary
 
 import static extension org.eclipse.emf.ecore.util.EcoreUtil.*
 import static extension org.eclipse.xtext.EcoreUtil2.*
-import org.iot.codegenerator.codeGenerator.Variables
 
 /**
  * This class contains custom scoping description.
@@ -38,6 +35,7 @@ import org.iot.codegenerator.codeGenerator.Variables
  */
 class CodeGeneratorScopeProvider extends AbstractCodeGeneratorScopeProvider {
 
+	@Inject extension CommonLibrary
 	override getScope(EObject context, EReference reference) {
 		val codeGen = CodeGeneratorPackage.eINSTANCE
 		switch (reference) {
@@ -87,17 +85,6 @@ class CodeGeneratorScopeProvider extends AbstractCodeGeneratorScopeProvider {
 		Scopes.scopeFor(list,QualifiedName.wrapper[name],IScope.NULLSCOPE)
 	}
 	
-	//Switch on sensor names, since name can be either name or sensortype.
-	def static String getName(Sensor sensor){
-		switch(sensor){
-			OverrideSensor:
-				sensor.sensor.name
-			AbstractSensor:
-				sensor.sensortype
-			BaseSensor:
-				sensor.sensortype
-		}
-	}
 	
 	/**
 	 * gets all of the variables ids for a variable_ref scope 
@@ -113,18 +100,7 @@ class CodeGeneratorScopeProvider extends AbstractCodeGeneratorScopeProvider {
 			Scopes.scopeFor(providerContainer.variablesOnProvider.ids)
 		}
 	}
-	
-	//switch on different provider type. Not "case" when switching on objects.
-	def static Variables getVariablesOnProvider(Provider provider){
-		switch(provider){
-			OverrideSensor:
-				provider.variables
-			BaseSensor:
-				provider.variables
-			Transformation:
-				provider.variables
-		}
-	}
+
 
 	/**
 	 * gets all of the variables for a transformationout 

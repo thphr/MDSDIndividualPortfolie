@@ -8,7 +8,7 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.AbstractGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.IGeneratorContext
-import org.iot.codegenerator.codeGenerator.Board
+import org.iot.codegenerator.codeGenerator.BaseBoard
 import org.iot.codegenerator.codeGenerator.Channel
 import org.iot.codegenerator.codeGenerator.Cloud
 import org.iot.codegenerator.codeGenerator.Fog
@@ -24,16 +24,17 @@ class CodeGeneratorGenerator extends AbstractGenerator {
 	@Inject extension BoardGenerator
 
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
-//		fsa.generateFile("config.json", resource.allContents.toIterable.filter(Channel).compile)
-//		
-//		val board = resource.allContents.filter(Board).next()
-//		board.compile(fsa)
-//		
-//		val fog = resource.allContents.filter(Fog).next()
-//		// TODO
-//		
-//		val cloud = resource.allContents.filter(Cloud).next()
-//		// TODO
+		fsa.generateFile("config.json", resource.allContents.toIterable.filter(Channel).compile)
+		
+		val boards = resource.allContents.filter(BaseBoard)
+		
+		boards.forEach[it.compile(fsa)]
+		
+		val fog = resource.allContents.filter(Fog).next()
+		// TODO
+		
+		val cloud = resource.allContents.filter(Cloud).next()
+		// TODO
 	}
 
 	def String compile(Iterable<Channel> channels) {
