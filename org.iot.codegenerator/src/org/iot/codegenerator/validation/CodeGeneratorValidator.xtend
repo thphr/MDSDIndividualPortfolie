@@ -75,8 +75,36 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 
 	@Inject
 	extension TypeChecker
-	
+
 	@Inject extension CommonLibrary
+
+	@Check
+	def checkNoDuplicateSensorOnInheritance(BaseBoard board) {
+		val supertypes = board.supertypes
+		val baseSensors = board.sensors.filter[it instanceof BaseSensor]
+		val allInheritedSensors = new ArrayList<Sensor>
+		val allSensors = new ArrayList<Sensor>
+
+		for (supertype : supertypes) {
+			allInheritedSensors.addAll(supertype.sensors)
+		}
+
+		val baseInheritedSensors = allInheritedSensors.filter[it instanceof BaseSensor]
+
+		allSensors.addAll(baseInheritedSensors)
+		allSensors.addAll(baseSensors)
+
+		val groupedSensors = allSensors.groupBy[it.name]
+		groupedSensors.filter[sensorName, sensors|sensors.size > 1].forEach [ sensorName, sensors |
+			{
+				sensors.forEach [
+					error('''Duplicate of sensor «sensorName». The sensor is already defined in the inherited board.''', it,
+						CodeGeneratorPackage.eINSTANCE.baseSensor_Sensortype)
+				]
+
+			}
+		]
+	}
 
 	/**
 	 * Check if both extended boards has the same sensor name, if true
@@ -94,7 +122,7 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 		groupedSensors.filter[sensorName, sensors|sensors.size > 1].forEach [ sensorName, sensors |
 			{
 				sensors.forEach [
-					error('''Duplicate of sensor «sensorName» on the extended boards''', board,
+					error('''Cannot inherit both boards at the same time. Duplicate of sensor «sensorName» on the extended boards.''', board,
 						CodeGeneratorPackage.eINSTANCE.baseBoard_Supertypes)
 				]
 
@@ -112,7 +140,7 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 		groupedSensors.filter[sensorName, sensors|sensors.size > 1].forEach [ sensorName, sensors |
 			{
 				sensors.forEach [
-					error('''Duplicate of sensor «sensorName»''', it,
+					error('''Duplicate of sensor «sensorName» on the board.''', it,
 						CodeGeneratorPackage.eINSTANCE.overrideSensor_Sensor)
 				]
 
@@ -120,7 +148,7 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 		]
 
 	}
-	
+
 	/**
 	 * Check for duplicated sensor name on base sensors.
 	 */
@@ -131,7 +159,7 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 		groupedSensors.filter[sensorName, sensors|sensors.size > 1].forEach [ sensorName, sensors |
 			{
 				sensors.forEach [
-					error('''Duplicate of sensor «sensorName»''', it,
+					error('''Duplicate of sensor «sensorName» on the board''', it,
 						CodeGeneratorPackage.eINSTANCE.baseSensor_Sensortype)
 				]
 
@@ -151,7 +179,7 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 		val allInheritedSensors = new ArrayList<Sensor>
 
 		for (supertype : supertypes) {
-			allInheritedSensors.addAll(supertype.sensors) 
+			allInheritedSensors.addAll(supertype.sensors)
 		}
 
 		for (inheritedSensor : allInheritedSensors) {
@@ -159,11 +187,11 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 				if (inheritedSensor instanceof OnbSensor && sensor.pins.size > 0) {
 					error('''An onboard sensor cannot be overriden by an external sensor''', sensor,
 						CodeGeneratorPackage.eINSTANCE.overrideSensor_Sensor)
-				} 
+				}
 				if (inheritedSensor instanceof ExtSensor && sensor.pins.size <= 0) {
 					error('''An external sensor cannot be overriden by an onboard sensor''', sensor,
 						CodeGeneratorPackage.eINSTANCE.overrideSensor_Sensor)
-				} 
+				}
 			}
 		}
 	}
