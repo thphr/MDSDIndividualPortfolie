@@ -29,7 +29,7 @@ class Thread:
         if self.id:
             raise ThreadException("Thread already completed")
         self.active = True
-        self.id = _thread.start_new_thread(self.__start, [])
+        self.id = _thread.start_new_thread(self.__start, ())
     
     def __start(self):
         try:
@@ -38,7 +38,7 @@ class Thread:
         except (KeyboardInterrupt, SystemExit):
             pass
         finally:
-            print("Stopped " + str(self.name))
+            # print("Stopped " + str(self.name))
             self.active = False
             self.state_lock.release()
             _thread.exit()
