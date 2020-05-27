@@ -78,6 +78,11 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 
 	@Inject extension CommonLibrary
 
+
+	/**
+	 * Checks that no duplicate base sensor are defined between 
+	 * the baseboard and the inherited board.
+	 */
 	@Check
 	def checkNoDuplicateSensorOnInheritance(BaseBoard board) {
 		val supertypes = board.supertypes
