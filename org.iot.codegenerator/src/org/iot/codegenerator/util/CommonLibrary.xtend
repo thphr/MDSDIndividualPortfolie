@@ -37,7 +37,10 @@ class CommonLibrary {
 		}
 	}
 	
-	
+	/**
+	 * Gets all the sensors that are implemented on the boards and
+	 * the ones that are inherited from the extended boards.
+	 */
 	def ArrayList<Sensor> getAllSensors(BaseBoard board){
 		val ArrayList<Sensor> implementedSensors = new ArrayList
 		val ArrayList<Sensor> supertypeSensors = new ArrayList
