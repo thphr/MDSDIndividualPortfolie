@@ -61,6 +61,7 @@ import static extension org.eclipse.xtext.EcoreUtil2.*
 import org.iot.codegenerator.codeGenerator.AbstractSensor
 import org.iot.codegenerator.codeGenerator.OverrideSensor
 import org.iot.codegenerator.util.CommonLibrary
+import java.util.HashSet
 
 /**
  * This class contains custom validation rules. 
@@ -78,6 +79,36 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 
 	@Inject extension CommonLibrary
 
+	/**
+	 * Checks for cyclic dependency on extended boards.
+	 */
+	@Check
+	def checkCyclicDependency(BaseBoard board) {
+		if (board.supertypes?.size == 0) {
+			return
+		}
+		val checkedEntities = newHashSet(board)
+		cyclicIteration(checkedEntities, board)
+	}
+
+	/**
+	 * Recursive check on cyclic dependency.
+	 */
+	def cyclicIteration(HashSet<BaseBoard> checkedEntities, BaseBoard board) {
+		if (board.supertypes?.size == 0) {
+			return
+		}
+		for (currentBoard : board.supertypes) {
+			if (currentBoard instanceof BaseBoard) {
+				if (checkedEntities.contains(currentBoard)) {
+					error('''Cyclic dependency: «currentBoard.name»''', board,
+						CodeGeneratorPackage.eINSTANCE.board_Name)
+				}
+				checkedEntities.add(currentBoard)
+				cyclicIteration(checkedEntities, currentBoard)
+			}
+		}
+	}
 
 	/**
 	 * Checks that no duplicate base sensor are defined between 
@@ -103,8 +134,8 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 		groupedSensors.filter[sensorName, sensors|sensors.size > 1].forEach [ sensorName, sensors |
 			{
 				sensors.forEach [
-					error('''Duplicate of sensor «sensorName». The sensor is already defined in the inherited board.''', it,
-						CodeGeneratorPackage.eINSTANCE.baseSensor_Sensortype)
+					error('''Duplicate of sensor «sensorName». The sensor is already defined in the inherited board.''',
+						it, CodeGeneratorPackage.eINSTANCE.baseSensor_Sensortype)
 				]
 
 			}
@@ -127,8 +158,8 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 		groupedSensors.filter[sensorName, sensors|sensors.size > 1].forEach [ sensorName, sensors |
 			{
 				sensors.forEach [
-					error('''Cannot inherit both boards at the same time. Duplicate of sensor «sensorName» on the extended boards.''', board,
-						CodeGeneratorPackage.eINSTANCE.baseBoard_Supertypes)
+					error('''Cannot inherit both boards at the same time. Duplicate of sensor «sensorName» on the extended boards.''',
+						board, CodeGeneratorPackage.eINSTANCE.baseBoard_Supertypes)
 				]
 
 			}
