@@ -1,5 +1,4 @@
-The DSL can be written using the extension; iot
-To run the DSL, following DSL program can be used:
+The DSL can be written using the extension; iot. To run the DSL, following DSL program can be used:
 
 
 language python  
