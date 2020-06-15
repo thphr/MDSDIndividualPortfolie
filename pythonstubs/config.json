@@ -1,0 +1,25 @@
+{
+    "wifi": {
+        "ssid": "",
+        "password": "",
+        "cloud": ""
+    },
+    "serial": {
+        "baud": "",
+        "databits": "",
+        "paritybits": "",
+        "stopbit": ""
+    },
+    "endpoint1": {
+        "type": "",
+        "lane": ""
+    },
+    "inserial": {
+        "type": "",
+        "lane": ""
+    },
+    "outserial": {
+        "type": "",
+        "lane": ""
+    }
+}
