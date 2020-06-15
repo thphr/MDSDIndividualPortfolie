@@ -87,25 +87,25 @@ class CodeGeneratorValidator extends AbstractCodeGeneratorValidator {
 		if (board.supertypes?.size == 0) {
 			return
 		}
-		val checkedEntities = newHashSet(board)
-		cyclicIteration(checkedEntities, board)
+		val checkedBoards = newHashSet(board)
+		cyclicIteration(checkedBoards, board)
 	}
 
 	/**
 	 * Recursive check on cyclic dependency.
 	 */
-	def cyclicIteration(HashSet<BaseBoard> checkedEntities, BaseBoard board) {
+	def cyclicIteration(HashSet<BaseBoard> checkedBoards, BaseBoard board) {
 		if (board.supertypes?.size == 0) {
 			return
 		}
 		for (currentBoard : board.supertypes) {
 			if (currentBoard instanceof BaseBoard) {
-				if (checkedEntities.contains(currentBoard)) {
+				if (checkedBoards.contains(currentBoard)) {
 					error('''Cyclic dependency: «currentBoard.name»''', board,
 						CodeGeneratorPackage.eINSTANCE.board_Name)
 				}
-				checkedEntities.add(currentBoard)
-				cyclicIteration(checkedEntities, currentBoard)
+				checkedBoards.add(currentBoard)
+				cyclicIteration(checkedBoards, currentBoard)
 			}
 		}
 	}
